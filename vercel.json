@@ -9,7 +9,7 @@
         },
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://your-project-name.vercel.app"
+          "value": "https://flask-6eqf.vercel.app"
         },
         {
           "key": "Access-Control-Allow-Methods",
